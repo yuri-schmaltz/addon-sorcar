@@ -349,7 +349,7 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "SELECTION_TYPE"):
                 val = data
         return True, val
-    except:
+    except Exception:
         return False, None
 
 def selection_type_to_string(sel_type):

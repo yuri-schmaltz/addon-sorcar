@@ -1,4 +1,4 @@
-data_hora: 2026-02-04T20:15:06.1353210-03:00
+data_hora: 2026-02-05T14:13:41.7765859-03:00
 
 # eval_builtin
 
@@ -6,25 +6,6 @@ data_hora: 2026-02-04T20:15:06.1353210-03:00
 nodes\utilities\ScCustomPythonScript.py:57:            exec(self.inputs["Script"].default_value)
 
 # bare_except
-addon_updater.py:171:		except:
-addon_updater.py:217:			except:
-addon_updater.py:265:		except:
-addon_updater.py:280:		except:
-addon_updater.py:290:		except:
-addon_updater.py:312:		except:
-addon_updater.py:356:		except:
-addon_updater.py:382:		except:
-addon_updater.py:407:			except:
-addon_updater.py:453:		except:
-addon_updater.py:463:		except:
-addon_updater.py:475:		except:
-addon_updater.py:807:			except:
-addon_updater.py:812:			except:
-addon_updater.py:864:			except:
-addon_updater.py:871:			except:
-addon_updater.py:925:		except:
-addon_updater.py:1130:		except:
-helper.py:352:    except:
 
 # scene_update_post
 addon_updater_ops.py:612:		bpy.app.handlers.scene_update_post.remove(
@@ -83,7 +64,7 @@ __init__.py:200:            enable_shortcuts = prefs.preferences.enable_shortcut
 __init__.py:202:        if (enable_shortcuts):
 
 # smoke_ci
-tests/README.md:14:blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
-tests/README.md:20:blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --cycles 5 --output sorcar-bench.json
 .github/workflows/blender-smoke.yml:27:        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
 .github/workflows/blender-smoke.yml:30:        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --cycles 3 --output sorcar-bench.json
+tests/README.md:14:blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
+tests/README.md:20:blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --cycles 5 --output sorcar-bench.json

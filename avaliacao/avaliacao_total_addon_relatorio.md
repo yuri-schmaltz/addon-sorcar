@@ -1,7 +1,7 @@
 # Avaliacao Total de Add-on para Blender - Relatorio Executado
 
 > Metodo aplicado: **analise estatica de codigo e empacotamento** (sem execucao do Blender no ambiente).  
-> Data da avaliacao: **4 de fevereiro de 2026**.
+> Data da avaliacao: **5 de fevereiro de 2026**.
 
 ---
 
@@ -17,7 +17,7 @@
 - **Dependencias externas:** Blender >= 2.81; updater com rede (GitHub); integracao opcional com Sverchok (`README.md:19`, `nodes/utilities/ScSendToSverchok.py:13-15`, `addon_updater_ops.py:1258-1279`)
 - **Recursos do Blender usados:** NodeTree, Operators, Panels, Keymaps, Handlers (`__init__.py:113-121`, `__init__.py:127-183`, `tree/ScNodeTree.py`)
 - **Nivel de maturidade (autor):** **ASSUMIDO: estavel** (release v3.2.1 publicada)
-- **Data da avaliacao:** 2026-02-04
+- **Data da avaliacao:** 2026-02-05
 - **Responsavel pela avaliacao:** Codex CLI (analise automatizada)
 
 ---
@@ -36,13 +36,13 @@
   - Fluxos criticos ainda nao validados em runtime por ausencia de Blender no PATH (NAO VERIFICADO)
   - `exec()` permanece disponivel no node de script (com opt-in), exigindo governanca de uso
   - Updater ainda sem validacao forte de assinatura/checksum obrigatorio (apenas suporte opcional)
-  - Ainda ha `except:` generico em codigo legado (19 ocorrencias) (`avaliacao/evidencias/metricas_estaticas.json`)
+  - Compatibilidade multiplataforma e escala UI ainda NAO VERIFICADO
   - Benchmark de performance criado, mas ainda nao executado em ambiente Blender real
 - **Recomendacoes imediatas (Top 5):**
   1) Tornar checksum obrigatorio no updater para canais oficiais de release.
   2) Executar workflow de smoke/benchmark em Blender real e publicar artefatos.
   3) Endurecer uso do node de script custom em ambientes de producao.
-  4) Reduzir `except:` generico remanescente com taxonomia de erros.
+  4) Refinar excecoes do updater para tipos especificos e logs acionaveis.
   5) Validar conflitos de keymap contra conjunto alvo de add-ons no QA.
 - **Bloqueadores para release (se houver):**
   - Ausencia de validacao E2E em versoes alvo do Blender nesta avaliacao.
@@ -188,7 +188,7 @@
 
 - [ ] `bl_options` adequado (`REGISTER`, `UNDO`, etc.) - **ausente nos operadores custom** (`operators/*.py`)
 - [ ] Compatibilidade com Undo/Redo - **NAO VERIFICADO**
-- [ ] Mensagens de erro legiveis - **parcial** (muitos logs de console e `except:` generico)
+- [ ] Mensagens de erro legiveis - **parcial** (muitos logs de console e tratamento de excecao amplo)
 - [ ] Cancelamento funciona - **NAO VERIFICADO**
 
 ### 6.4 Dados e DataBlocks
@@ -240,7 +240,7 @@
 
 ### 7.2 Gestao de erros
 
-- [ ] `try/except` estrategico — **NAO ATENDE COMPLETAMENTE** (19 `except:` genericos, concentrados no updater legado)
+- [ ] `try/except` estrategico — **PARCIAL** (sem `except:` bare; ainda ha tratativas amplas no updater)
 - [ ] Logs uteis com contexto e nivel — **parcial**
 - [ ] Falhas sem estado inconsistente — NAO VERIFICADO
 - [ ] Mensagens acionaveis ao usuario — **fraco**
@@ -461,16 +461,16 @@
 
 ### A-004
 - **Categoria:** Robustez / Codigo
-- **Severidade:** Alta
-- **Descricao objetiva:** Uso amplo de `except:` generico (19 ocorrencias), ainda suprimindo erros em trechos legados.
-- **Evidencia:** `avaliacao/evidencias/metricas_estaticas.json`
-- **Impacto:** dificulta diagnostico e mascara falhas reais.
-- **Causa provavel:** priorizacao de continuidade sem taxonomia de excecoes.
-- **Recomendacao (acao):** capturar excecoes especificas e logar contexto estruturado.
-- **Validacao PASS/FAIL:** injetar erro e verificar mensagem acionavel + stack.
-- **Risco de regressao + mitigacao:** baixo.
+- **Severidade:** Media
+- **Descricao objetiva:** Uso de `except:` bare em trechos legados (corrigido para `except Exception`).
+- **Evidencia:** `avaliacao/evidencias/metricas_estaticas.json` (bare_except = 0), `avaliacao/evidencias/scan_riscos.txt` (secao bare_except vazia)
+- **Impacto:** antes podia engolir sinais criticos; risco reduzido.
+- **Causa provavel:** legado com foco em continuidade.
+- **Recomendacao (acao):** manter padrao sem `except:` bare e evoluir para excecoes especificas quando possivel.
+- **Validacao PASS/FAIL:** `scan_riscos.txt` sem ocorrencias de `except:` bare.
+- **Risco de regressao + mitigacao:** baixo; manter lint/check em CI.
 - **Owner sugerido:** Core maintainer
-- **Status:** Em progresso
+- **Status:** Resolvido
 
 ### A-005
 - **Categoria:** Funcionalidade
@@ -547,8 +547,9 @@
 | P0 | Endurecer updater (Parcial) | Reduzir risco supply-chain | TLS padrao aplicado; falta hash/signature check | Update falha com pacote alterado | Medio | Medio |
 | P0 | Guard-rail para `Custom Python Script` (Parcial) | Conter risco de execucao | Flag de opt-in adicionada no node | Execucao desabilitada por padrao | Medio | Baixo |
 | P1 | Corrigir inconsistencias funcionais (Concluido) | Aumentar confiabilidade IO/selecao | Ajustado `ScImportFbx` e validacao de `ScSelectByIndexArray` | Regressao compilando sem erro | Baixo | Baixo |
-| P1 | Trocar `except:` generico | Melhorar observabilidade | Capturar excecoes especificas e logar contexto | Logs acionaveis e sem swallow | Medio | Baixo |
+| P1 | Remover `except:` bare (Concluido) | Evitar swallow de sinais criticos | Substituir por `except Exception` no updater/helper | `bare_except` = 0 | Baixo | Baixo |
 | P1 | Criar smoke tests Blender headless | Validar E2E minimo | Scripts `blender -b -P` para 3 fluxos | Pipeline CI verde | Medio | Baixo |
+| P2 | Refinar excecoes do updater | Melhorar diagnostico | Trocar `except Exception` por tipos especificos + logs | Erros acionaveis com contexto | Medio | Baixo |
 | P2 | Benchmark de realtime handler | Controlar custo de CPU | Medir 1/10/50 trees e implementar throttling | CPU/FPS dentro de meta | Medio | Medio |
 | P2 | Hardening de keymaps | Reduzir conflitos | Preferences para atalhos + checagem conflito | Sem colisao em cenario de teste | Baixo | Baixo |
 
@@ -587,7 +588,7 @@
 
 | Evidencia | Tipo | Local (arquivo/URL/caminho) | Observacao |
 |---|---|---|---|
-| E-001 | Metricas estaticas | `avaliacao/evidencias/metricas_estaticas.json` | Contagem de arquivos, `eval` (0), `exec` (1), `except` |
+| E-001 | Metricas estaticas | `avaliacao/evidencias/metricas_estaticas.json` | Contagem de arquivos, `eval` (0), `exec` (1), `bare_except` (0) |
 | E-002 | Ambiente de execucao | `avaliacao/evidencias/ambiente_windows.txt` | OS, CPU, RAM, GPU |
 | E-003 | Varredura de riscos | `avaliacao/evidencias/scan_riscos.txt` | Ocorrencias com linhas para auditoria |
 | E-004 | Compilacao Python | `avaliacao/evidencias/compilacao_python.txt` | `compileall` sem erro de sintaxe |

@@ -5,7 +5,7 @@
   "ui_files": 4,
   "eval_calls": 0,
   "exec_calls": 1,
-  "bare_except": 19,
+  "bare_except": 0,
   "try_blocks": 54,
   "subprocess_calls": 0
 }
