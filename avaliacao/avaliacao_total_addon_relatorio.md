@@ -1,6 +1,6 @@
 # Avaliacao Total de Add-on para Blender - Relatorio Executado
 
-> Metodo aplicado: **analise estatica de codigo e empacotamento** (sem execucao do Blender no ambiente).  
+> Metodo aplicado: **analise estatica, empacotamento e execucao headless** (Blender 5.0.0).  
 > Data da avaliacao: **5 de fevereiro de 2026**.
 
 ---
@@ -24,28 +24,27 @@
 
 ## 1) Sumario executivo
 
-- **Status geral:** ⚠️ Aprovado com ressalvas
-- **Pontuacao total:** **66/100** (ver Rubrica)
+- **Status geral:** ❌ Reprovado
+- **Pontuacao total:** **56/100** (ver Rubrica)
 - **Principais pontos fortes (3-5):**
   - Arquitetura modular grande (301 arquivos Python, 261 arquivos de nos) (`avaliacao/evidencias/metricas_estaticas.json`)
-  - Estrutura de registro/desregistro organizada (classes, keymaps, handler) (`__init__.py:127-183`)
-  - Cobertura funcional ampla para modelagem procedural (categorias de nos no README)
-  - Empacotamento no formato padrao de add-on Blender (`__init__.py` na raiz)
+  - Hardening aplicado: `eval` removido e checksum obrigatorio no updater (parcial) (`avaliacao/evidencias/scan_riscos.txt`)
+  - Automacao de smoke/benchmark headless adicionada (CI + scripts) (`tests/README.md`, `.github/workflows/blender-smoke.yml`)
   - Compilacao Python sem erros de sintaxe (`avaliacao/evidencias/compilacao_python.txt`)
 - **Principais riscos/lacunas (3-7):**
-  - Fluxos criticos ainda nao validados em runtime por ausencia de Blender no PATH (NAO VERIFICADO)
+  - Falha ao habilitar no Blender 5.0 (ImportError: `NodeSocketInterface`)
   - `exec()` permanece disponivel no node de script (com opt-in), exigindo governanca de uso
-  - Updater ainda sem validacao forte de assinatura/checksum obrigatorio (apenas suporte opcional)
+  - Assinatura de update ainda inexistente (apenas checksum SHA256)
   - Compatibilidade multiplataforma e escala UI ainda NAO VERIFICADO
-  - Benchmark de performance criado, mas ainda nao executado em ambiente Blender real
+  - Performance nao medida por falha de enable no Blender 5.0
 - **Recomendacoes imediatas (Top 5):**
-  1) Tornar checksum obrigatorio no updater para canais oficiais de release.
-  2) Executar workflow de smoke/benchmark em Blender real e publicar artefatos.
-  3) Endurecer uso do node de script custom em ambientes de producao.
-  4) Refinar excecoes do updater para tipos especificos e logs acionaveis.
+  1) Corrigir compatibilidade com Blender 5.0 (NodeSocketInterface) e repetir smoke/benchmark.
+  2) Rodar matriz 2.81/3.x/4.x/5.0 e registrar resultados.
+  3) Endurecer governanca do node de script custom em ambientes de producao.
+  4) Implementar assinatura de update ou publicacao automatica de SHA256.
   5) Validar conflitos de keymap contra conjunto alvo de add-ons no QA.
 - **Bloqueadores para release (se houver):**
-  - Ausencia de validacao E2E em versoes alvo do Blender nesta avaliacao.
+  - Add-on nao habilita no Blender 5.0 (erro de importacao em sockets).
 
 ---
 
@@ -53,11 +52,11 @@
 
 ### 2.1 Escopo incluido nesta avaliacao
 
-- [ ] Instalacao e ativacao
-- [ ] Fluxos E2E criticos
+- [x] Instalacao e ativacao (headless, Blender 5.0) — **FALHOU**
+- [x] Fluxos E2E criticos (headless, Blender 5.0) — **FALHOU**
 - [x] Integracoes com Blender (UI, Operators, DataBlocks, handlers) - **via analise estatica**
 - [x] Import/Export e I/O de arquivos (se aplicavel) - **via analise estatica**
-- [ ] Performance (tempo, memoria, UI)
+- [x] Performance (tempo, memoria, UI) — **FALHOU (enable nao concluiu)**
 - [x] Robustez (erros, edge cases, undo/redo) - **via analise estatica**
 - [x] Seguranca e privacidade (se aplicavel) - **via analise estatica**
 - [x] Qualidade de codigo e manutencao
@@ -68,9 +67,10 @@
 
 | Item | Motivo | Como verificar (passos objetivos) | Owner sugerido |
 |---|---|---|---|
-| Instalacao/ativacao no Blender | `blender` indisponivel no ambiente | Instalar zip no Blender 2.81/3.x/4.x, ativar/desativar 10x, capturar console | QA Blender |
-| Fluxos E2E de modelagem | Sem runtime do Blender | Executar 3 cenas de regressao (pequena/media/grande) e comparar outputs | QA funcional |
-| Performance p50/p95 | Sem ambiente de benchmark | Rodar script batch `blender -b` com medicao de tempo e RAM | QA performance |
+| Instalacao/ativacao interativa | Apenas headless; falhou no Blender 5.0 | Instalar via UI no Blender 2.81/3.x/4.x/5.0 e validar enable/disable | QA Blender |
+| Fluxos E2E de modelagem | Enable falhou no Blender 5.0 | Executar 3 cenas de regressao (pequena/media/grande) e comparar outputs | QA funcional |
+| Performance p50/p95 | Benchmark nao executou (falha de enable) | Rodar script batch `blender -b` com medicao de tempo e RAM | QA performance |
+| Compatibilidade Blender 2.81/3.x/4.x | Nao testado nesta rodada | Repetir matriz por versao e registrar logs | QA multiplataforma |
 | Compatibilidade Linux/macOS | Ambiente atual apenas Windows | Repetir matriz em Linux/macOS e validar keymaps/handlers | QA multiplataforma |
 | Escala UI 125%/150% | NAO VERIFICADO | Capturar screenshots dos paineis em 100/125/150% | UX QA |
 
@@ -83,7 +83,7 @@
 - **Versao minima suportada (declarada):** 2.81 (`__init__.py:23`, `README.md:19`)
 - **Versoes testadas:**
   - [ ] LTS: **NAO VERIFICADO**
-  - [ ] Ultima estavel: **NAO VERIFICADO**
+  - [x] Ultima estavel: **Blender 5.0.0 (headless) — FALHOU ao habilitar**
   - [ ] Beta/Alpha (opcional): **NAO VERIFICADO**
 
 ### 3.2 Sistemas operacionais
@@ -107,6 +107,8 @@
   - `python -m compileall -q .`
   - `rg -n "..."` para varredura de riscos
   - scripts Python locais para metricas estaticas
+  - `C:\Blender\blender.exe -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --toggle-count 3`
+  - `C:\Blender\blender.exe -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --iterations 5 --output avaliacao/evidencias/sorcar-bench.json`
   - arquivos de evidencia em `avaliacao/evidencias/`
 
 ---
@@ -132,23 +134,23 @@
 
 #### Fluxo E2E-01 — Instalacao e ativacao
 - **Objetivo do usuario:** instalar e habilitar o add-on
-- **Pre-condicoes:** Blender instalado (NAO VERIFICADO)
-- **Passos:** conforme `README.md:21-25`
+- **Pre-condicoes:** Blender 5.0.0 instalado
+- **Passos:** `blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --toggle-count 3`
 - **Resultado esperado:** add-on ativo com paineis Sorcar
-- **Resultado observado:** **NAO VERIFICADO**
-- **Evidencia:** `README.md`, ausencia de `blender` no PATH
-- **Status:** ⚪ NAO VERIFICADO
-- **Observacoes/edge cases:** validar enable/disable 10x
+- **Resultado observado:** **FALHOU** ao habilitar (ImportError: `NodeSocketInterface`)
+- **Evidencia:** `avaliacao/evidencias/smoke_blender.txt`
+- **Status:** ❌ FAIL
+- **Observacoes/edge cases:** executar também em 2.81/3.x/4.x
 
 #### Fluxo E2E-02 — Montar e executar grafo procedural
 - **Objetivo do usuario:** gerar malha a partir de nos
 - **Pre-condicoes:** add-on ativo no Node Editor
-- **Passos:** Create node tree -> adicionar nos -> `Set Preview`/`E`
+- **Passos:** criar NodeTree -> adicionar `ScCreateCube` -> `Set Preview`
 - **Resultado esperado:** objeto de saida atualizado
-- **Resultado observado:** **NAO VERIFICADO**
-- **Evidencia:** estrutura de execucao em `tree/ScNodeTree.py:68-81`
-- **Status:** ⚪ NAO VERIFICADO
-- **Observacoes/edge cases:** validar Undo/Redo e cancelamento
+- **Resultado observado:** **FALHOU** (enable nao concluiu)
+- **Evidencia:** `avaliacao/evidencias/smoke_blender.txt`
+- **Status:** ❌ FAIL
+- **Observacoes/edge cases:** validar Undo/Redo e cancelamento em versoes suportadas
 
 #### Fluxo E2E-03 — Importar e exportar FBX
 - **Objetivo do usuario:** I/O de assets
@@ -173,9 +175,10 @@
 
 - [x] `register()`/`unregister()` presentes e coerentes (`__init__.py:127-183`)
 - [x] Remocao de handler e keymaps no `unregister()` (`__init__.py:174-179`)
+- [ ] Registro habilita no Blender 5.0 — **FALHOU** (ImportError)
 - [ ] Suporte comprovado a Reload Scripts sem duplicacao — **NAO VERIFICADO em runtime**
 
-**Evidencia:** `__init__.py`, `tree/ScNodeTree.py`, `avaliacao/evidencias/scan_riscos.txt`
+**Evidencia:** `__init__.py`, `avaliacao/evidencias/smoke_blender.txt`, `avaliacao/evidencias/scan_riscos.txt`
 
 ### 6.2 UI (Panels, Menus, UIList, Popovers)
 
@@ -247,7 +250,7 @@
 
 ### 7.3 Estabilidade
 
-- **Crash/hang observado?** Nao observado (sem execucao Blender)
+- **Crash/hang observado?** Falha de enable no Blender 5.0 (ImportError em sockets)
 - **Stack trace relevante:** N/A
 - **Reprodutibilidade:** NAO VERIFICADO
 
@@ -255,14 +258,14 @@
 
 ## 8) Performance (metrica antes/depois)
 
-> Nao foi possivel medir sem Blender no ambiente.
+> Tentado em Blender 5.0, mas o add-on falhou ao habilitar; benchmark nao executou.
 
 ### 8.1 Metricas minimas
 
-- **Tempo de execucao do fluxo critico (p50/p95):** NAO VERIFICADO
+- **Tempo de execucao do fluxo critico (p50/p95):** NAO VERIFICADO (enable falhou)
 - **Impacto no FPS/viewport:** NAO VERIFICADO
 - **Uso de CPU/RAM pico e steady-state:** NAO VERIFICADO
-- **Tempo de startup/ativacao do add-on:** NAO VERIFICADO
+- **Tempo de startup/ativacao do add-on:** NAO VERIFICADO (enable falhou)
 - **I/O (tamanho de outputs/caches):** NAO VERIFICADO
 
 ### 8.2 Critrios PASS/FAIL sugeridos
@@ -273,13 +276,14 @@
 
 ### 8.3 Evidencias
 
-- **Comandos/roteiro de medicao:** pendente
+- **Comandos/roteiro de medicao:** `blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --iterations 5 --output avaliacao/evidencias/sorcar-bench.json`
+- **Evidencia de falha:** `avaliacao/evidencias/benchmark_blender.txt`
 - **Resultados (tabela):**
 
 | Cenario | Medida | Antes | Depois | Delta | Status |
 |---|---:|---:|---:|---:|---|
-| Pequeno | Tempo (s) | N/A | N/A | N/A | NAO VERIFICADO |
-| Grande | Tempo (s) | N/A | N/A | N/A | NAO VERIFICADO |
+| Pequeno | Tempo (s) | N/A | N/A | N/A | FAIL (enable) |
+| Grande | Tempo (s) | N/A | N/A | N/A | FAIL (enable) |
 
 ---
 
@@ -297,7 +301,7 @@
 
 - [x] Sem `shell=True` e sem concatenacao de comandos de shell
 - [ ] Validacao robusta de caminhos (traversal/symlink) - NAO EVIDENCIADO
-- [x] Limites minimos de integridade no download (arquivo nao vazio + SHA256 calculado)
+- [x] Limites minimos de integridade no download (SHA256 calculado + checksum obrigatorio)
 - [ ] Dependencias pinned/lockfile - NAO EVIDENCIADO
 - [x] Arquivos temporarios em pasta dedicada (`update_staging`), com limpeza parcial
 - [ ] Politica de logs sem dados sensiveis - NAO EVIDENCIADO
@@ -340,6 +344,7 @@
 ### 11.2 Compatibilidade de API do Blender
 
 - [x] Meta de compatibilidade declarada (2.81+)
+- [ ] Compatibilidade com Blender 5.0 — **FALHOU** (NodeSocketInterface)
 - [ ] Guards robustos para multiplas versoes recentes (NAO EVIDENCIADO)
 - [ ] Matriz de teste real em versoes-alvo (NAO EVIDENCIADO)
 
@@ -398,15 +403,15 @@
 
 | Area | Peso | Nota (0–5) | Subtotal |
 |---|---:|---:|---:|
-| Funcionalidade E2E | 25 | 3 | 15 |
-| Integracoes com Blender | 15 | 4 | 12 |
+| Funcionalidade E2E | 25 | 2 | 10 |
+| Integracoes com Blender | 15 | 3 | 9 |
 | Robustez/Confiabilidade | 15 | 3 | 9 |
-| Performance | 10 | 2 | 4 |
+| Performance | 10 | 1 | 2 |
 | Seguranca/Privacidade (se aplicavel) | 10 | 4 | 8 |
 | UX/Acessibilidade | 10 | 3 | 6 |
 | Qualidade de codigo/manutencao | 10 | 4 | 8 |
 | Documentacao/Onboarding | 5 | 4 | 4 |
-| **TOTAL** | **100** |  | **66** |
+| **TOTAL** | **100** |  | **56** |
 
 ### 14.1 Criterios de decisao
 
@@ -414,7 +419,7 @@
 - ⚠️ Aprovado com ressalvas: 65–79 ou riscos mitigaveis
 - ❌ Reprovado: < 65 ou com bloqueadores  
 
-**Decisao desta avaliacao:** ⚠️ **Aprovado com ressalvas** (hardening aplicado; pendente validacao runtime no Blender).
+**Decisao desta avaliacao:** ❌ **Reprovado** (falha de enable no Blender 5.0).
 
 ---
 
@@ -448,25 +453,25 @@
 
 ### A-003
 - **Categoria:** Seguranca / Supply chain
-- **Severidade:** Alta
-- **Descricao objetiva:** Updater passou a usar TLS padrao e validacao opcional de checksum, mas ainda sem exigencia obrigatoria/assinatura.
-- **Evidencia:** `avaliacao/evidencias/scan_riscos.txt` (sem `_create_unverified_context`), `addon_updater.py`
-- **Impacto:** risco MITM e instalacao de update adulterado.
-- **Causa provavel:** implementacao legada do updater.
-- **Recomendacao (acao):** manter TLS padrao e tornar checksum obrigatorio (ou assinatura) em releases oficiais.
-- **Validacao PASS/FAIL:** forcar certificado invalido e garantir bloqueio.
-- **Risco de regressao + mitigacao:** medio; fallback manual para update.
+- **Severidade:** Media
+- **Descricao objetiva:** Updater agora exige checksum SHA256 por padrao; assinatura ainda ausente.
+- **Evidencia:** `avaliacao/evidencias/scan_riscos.txt` (require_checksum=True), `addon_updater_ops.py`
+- **Impacto:** reduz risco MITM, mas updates falham se checksum nao for publicado.
+- **Causa provavel:** implementacao legada do updater sem pipeline de assinatura.
+- **Recomendacao (acao):** publicar `.sha256` automaticamente ou implementar assinatura de release.
+- **Validacao PASS/FAIL:** update deve falhar sem checksum e passar com `.sha256` valido.
+- **Risco de regressao + mitigacao:** medio; documentar processo de release.
 - **Owner sugerido:** Responsavel por release
 - **Status:** Em progresso
 
 ### A-004
 - **Categoria:** Robustez / Codigo
 - **Severidade:** Media
-- **Descricao objetiva:** Uso de `except:` bare em trechos legados (corrigido para `except Exception`).
+- **Descricao objetiva:** Uso de `except:` bare em trechos legados (corrigido para excecoes especificas).
 - **Evidencia:** `avaliacao/evidencias/metricas_estaticas.json` (bare_except = 0), `avaliacao/evidencias/scan_riscos.txt` (secao bare_except vazia)
 - **Impacto:** antes podia engolir sinais criticos; risco reduzido.
 - **Causa provavel:** legado com foco em continuidade.
-- **Recomendacao (acao):** manter padrao sem `except:` bare e evoluir para excecoes especificas quando possivel.
+- **Recomendacao (acao):** manter padrao sem `except:` bare e revisar novos pontos com logs acionaveis.
 - **Validacao PASS/FAIL:** `scan_riscos.txt` sem ocorrencias de `except:` bare.
 - **Risco de regressao + mitigacao:** baixo; manter lint/check em CI.
 - **Owner sugerido:** Core maintainer
@@ -514,13 +519,13 @@
 ### A-008
 - **Categoria:** Qualidade de codigo / Release
 - **Severidade:** Media
-- **Descricao objetiva:** Ausencia de testes automatizados foi mitigada com smoke script, benchmark script e workflow CI para Blender.
-- **Evidencia:** `tests/smoke/smoke_addon.py`, `tests/perf/benchmark_execute.py`, `.github/workflows/blender-smoke.yml`
-- **Impacto:** alta chance de regressao silenciosa.
-- **Causa provavel:** projeto orientado a contribuicao manual.
-- **Recomendacao (acao):** executar pipeline regularmente e adicionar asserts de regressao funcional por categoria de node.
-- **Validacao PASS/FAIL:** pipeline deve quebrar em regressao conhecida.
-- **Risco de regressao + mitigacao:** baixo.
+- **Descricao objetiva:** Smoke e benchmark headless adicionados, mas falham no Blender 5.0 devido a incompatibilidade.
+- **Evidencia:** `tests/smoke/smoke_addon.py`, `tests/perf/benchmark_execute.py`, `avaliacao/evidencias/smoke_blender.txt`
+- **Impacto:** regressao detectada mais cedo, porem pipeline ainda vermelho.
+- **Causa provavel:** mudanca de API em sockets.
+- **Recomendacao (acao):** corrigir compatibilidade 5.0 e manter pipeline verde por matriz.
+- **Validacao PASS/FAIL:** pipeline deve passar em 2.81/3.x/4.x/5.0.
+- **Risco de regressao + mitigacao:** medio.
 - **Owner sugerido:** Responsavel DevOps
 - **Status:** Em progresso
 
@@ -537,19 +542,33 @@
 - **Owner sugerido:** Maintainer UX
 - **Status:** Em progresso
 
+### A-010
+- **Categoria:** Integracao / Compatibilidade
+- **Severidade:** Alta (Bloqueador)
+- **Descricao objetiva:** Falha ao habilitar no Blender 5.0 por `ImportError: NodeSocketInterface` em sockets.
+- **Evidencia:** `avaliacao/evidencias/smoke_blender.txt`, `avaliacao/evidencias/benchmark_blender.txt`, `sockets/ScNodeSocketInterfaceArray.py:4`
+- **Impacto:** add-on nao habilita na versao mais recente do Blender, bloqueando uso e testes.
+- **Causa provavel:** mudanca de API do Blender 5.0 (classe removida/renomeada).
+- **Recomendacao (acao):** adicionar fallback para API nova e condicionar import por versao.
+- **Validacao PASS/FAIL:** smoke test headless em Blender 5.0 deve finalizar com `SMOKE_PASS`.
+- **Risco de regressao + mitigacao:** medio; cobrir com matriz 2.81/3.x/4.x/5.0.
+- **Owner sugerido:** Core maintainer
+- **Status:** Aberto
+
 ---
 
 ## 16) Backlog executavel (priorizado)
 
 | Prioridade | Tarefa | Objetivo | Passos | Aceite | Esforco | Risco |
 |---:|---|---|---|---|---|---|
+| P0 | Compatibilizar Blender 5.0 (NodeSocketInterface) | Habilitar add-on na versao atual | Adicionar fallback por versao e ajustar sockets | Smoke PASS em 5.0 | Alto | Alto |
 | P0 | Remover `eval` de caminho critico (Concluido) | Mitigar execucao arbitraria | Substituido por parsing seguro em helper/sockets/nodes | Nenhum `eval` em `*.py` | Alto | Medio |
-| P0 | Endurecer updater (Parcial) | Reduzir risco supply-chain | TLS padrao aplicado; falta hash/signature check | Update falha com pacote alterado | Medio | Medio |
+| P0 | Endurecer updater (Parcial) | Reduzir risco supply-chain | Checksum obrigatorio aplicado; falta assinatura | Update falha sem `.sha256` e passa com checksum | Medio | Medio |
 | P0 | Guard-rail para `Custom Python Script` (Parcial) | Conter risco de execucao | Flag de opt-in adicionada no node | Execucao desabilitada por padrao | Medio | Baixo |
 | P1 | Corrigir inconsistencias funcionais (Concluido) | Aumentar confiabilidade IO/selecao | Ajustado `ScImportFbx` e validacao de `ScSelectByIndexArray` | Regressao compilando sem erro | Baixo | Baixo |
 | P1 | Remover `except:` bare (Concluido) | Evitar swallow de sinais criticos | Substituir por `except Exception` no updater/helper | `bare_except` = 0 | Baixo | Baixo |
-| P1 | Criar smoke tests Blender headless | Validar E2E minimo | Scripts `blender -b -P` para 3 fluxos | Pipeline CI verde | Medio | Baixo |
-| P2 | Refinar excecoes do updater | Melhorar diagnostico | Trocar `except Exception` por tipos especificos + logs | Erros acionaveis com contexto | Medio | Baixo |
+| P1 | Criar smoke tests Blender headless (Concluido) | Validar E2E minimo | Scripts `blender -b -P` para 3 fluxos | Pipeline CI executa (FAIL em 5.0) | Medio | Baixo |
+| P1 | Refinar excecoes do updater (Concluido) | Melhorar diagnostico | Trocar `except Exception` por tipos especificos + logs | Erros acionaveis com contexto | Medio | Baixo |
 | P2 | Benchmark de realtime handler | Controlar custo de CPU | Medir 1/10/50 trees e implementar throttling | CPU/FPS dentro de meta | Medio | Medio |
 | P2 | Hardening de keymaps | Reduzir conflitos | Preferences para atalhos + checagem conflito | Sem colisao em cenario de teste | Baixo | Baixo |
 
@@ -595,6 +614,8 @@
 | E-005 | Metadados do add-on | `__init__.py:18-27` | `bl_info` (nome, versao, alvo Blender) |
 | E-006 | Escopo funcional declarado | `README.md:14-69` | Features, quickstart, categorias de nos |
 | E-007 | Ciclo de vida do add-on | `__init__.py:127-183` | Registro classes/keymaps/handlers |
-| E-008 | Hardening updater | `addon_updater.py` | Sem `_create_unverified_context`; checksum opcional implementado, assinatura/checksum obrigatorio pendente |
+| E-008 | Hardening updater | `addon_updater_ops.py` | Checksum SHA256 obrigatorio por padrao; assinatura pendente |
 | E-009 | Risco script arbitrario | `nodes/utilities/ScCustomPythonScript.py:57` | `exec` direto em entrada do usuario (com opt-in) |
 | E-010 | Inconsistencia funcional | `nodes/inputs/ScImportFbx.py:14` e `nodes/inputs/ScImportFbx.py:30` | Label x parametro de import FBX |
+| E-011 | Smoke headless (falha) | `avaliacao/evidencias/smoke_blender.txt` | ImportError `NodeSocketInterface` no Blender 5.0 |
+| E-012 | Benchmark headless (falha) | `avaliacao/evidencias/benchmark_blender.txt` | Enable falhou, benchmark nao executou |

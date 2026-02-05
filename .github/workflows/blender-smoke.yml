@@ -24,10 +24,10 @@ jobs:
         run: python tests/smoke/package_addon.py --output sorcar-smoke.zip
 
       - name: Run Smoke Test
-        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
+        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --toggle-count 3
 
       - name: Run Benchmark
-        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --cycles 3 --output sorcar-bench.json
+        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --iterations 3 --output sorcar-bench.json
 
       - name: Upload Benchmark Artifact
         uses: actions/upload-artifact@v4

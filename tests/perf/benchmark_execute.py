@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--addon-module", default="", help="Addon module name (optional).")
     parser.add_argument("--addon-zip", default="", help="Addon zip to install before benchmark.")
     parser.add_argument("--tree-count", type=int, default=5, help="Number of trees.")
-    parser.add_argument("--cycles", type=int, default=5, help="Execution cycles.")
+    parser.add_argument("--iterations", type=int, default=5, help="Execution cycles.")
     parser.add_argument("--output", default="", help="Optional JSON output filepath.")
     return parser.parse_args(argv)
 
@@ -59,17 +59,17 @@ def run() -> None:
         trees.append(tree)
 
     start = time.perf_counter()
-    for _ in range(args.cycles):
+    for _ in range(args.iterations):
         for tree in trees:
             tree.execute_node()
     elapsed = time.perf_counter() - start
 
     stats = {
         "tree_count": args.tree_count,
-        "cycles": args.cycles,
+        "cycles": args.iterations,
         "total_seconds": elapsed,
-        "seconds_per_cycle": elapsed / max(args.cycles, 1),
-        "seconds_per_tree_exec": elapsed / max(args.cycles * args.tree_count, 1),
+        "seconds_per_cycle": elapsed / max(args.iterations, 1),
+        "seconds_per_tree_exec": elapsed / max(args.iterations * args.tree_count, 1),
     }
 
     for tree in trees:

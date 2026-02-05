@@ -168,7 +168,7 @@ class Singleton_updater(object):
 	def auto_reload_post_update(self, value):
 		try:
 			self._auto_reload_post_update = bool(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("Must be a boolean value")
 
 	@property
@@ -214,7 +214,7 @@ class Singleton_updater(object):
 		elif type(tuple_values) is not tuple:
 			try:
 				tuple(tuple_values)
-			except Exception:
+			except (TypeError, ValueError):
 				raise ValueError(
 				"Not a tuple! current_version must be a tuple of integers")
 		for i in tuple_values:
@@ -262,7 +262,7 @@ class Singleton_updater(object):
 	def include_branch_autocheck(self, value):
 		try:
 			self._include_branch_autocheck = bool(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("include_branch_autocheck must be a boolean value")
 
 	@property
@@ -277,7 +277,7 @@ class Singleton_updater(object):
 				raise ValueError("include_branch_list should be a list of valid branches")
 			else:
 				self._include_branch_list = value
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("include_branch_list should be a list of valid branches")
 
 	@property
@@ -287,7 +287,7 @@ class Singleton_updater(object):
 	def include_branches(self, value):
 		try:
 			self._include_branches = bool(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("include_branches must be a boolean value")
 
 	@property
@@ -309,7 +309,7 @@ class Singleton_updater(object):
 	def manual_only(self, value):
 		try:
 			self._manual_only = bool(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("manual_only must be a boolean value")
 
 	@property
@@ -353,7 +353,7 @@ class Singleton_updater(object):
 	def require_checksum(self, value):
 		try:
 			self._require_checksum = bool(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("require_checksum must be a boolean value")
 
 	@property
@@ -379,7 +379,7 @@ class Singleton_updater(object):
 	def repo(self, value):
 		try:
 			self._repo = str(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("User must be a string")
 
 	@property
@@ -404,7 +404,7 @@ class Singleton_updater(object):
 		elif value != None and not os.path.exists(value):
 			try:
 				os.makedirs(value)
-			except Exception:
+			except OSError:
 				if self._verbose: print("Error trying to staging path")
 				return
 		self._updater_path = value
@@ -450,7 +450,7 @@ class Singleton_updater(object):
 	def use_releases(self, value):
 		try:
 			self._use_releases = bool(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("use_releases must be a boolean value")
 
 	@property
@@ -460,7 +460,7 @@ class Singleton_updater(object):
 	def user(self, value):
 		try:
 			self._user = str(value)
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("User must be a string value")
 
 	@property
@@ -472,7 +472,7 @@ class Singleton_updater(object):
 			self._verbose = bool(value)
 			if self._verbose == True:
 				print(self._addon+" updater verbose is enabled")
-		except Exception:
+		except (TypeError, ValueError):
 			raise ValueError("Verbose must be a boolean value")
 
 	@property
@@ -699,7 +699,7 @@ class Singleton_updater(object):
 		if get != None:
 			try:
 				return json.JSONDecoder().decode(get)
-			except Exception as e:
+			except (ValueError, json.JSONDecodeError) as e:
 				self._error = "API response has invalid JSON format"
 				self._error_msg = str(e.reason)
 				self._update_ready = None
@@ -717,13 +717,13 @@ class Singleton_updater(object):
 
 		try:
 			result = urllib.request.urlopen(request)
-		except Exception:
+		except (urllib.error.URLError, ValueError):
 			return None
 
 		try:
 			result_string = result.read()
 			return result_string.decode()
-		except Exception:
+		except (UnicodeDecodeError, OSError):
 			return None
 		finally:
 			result.close()
@@ -757,7 +757,7 @@ class Singleton_updater(object):
 
 		try:
 			self._download_sha256 = self.calculate_file_sha256(self._source_zip)
-		except Exception as err:
+		except OSError as err:
 			self._error = "Checksum generation failed"
 			self._error_msg = str(err)
 			return False
@@ -804,12 +804,12 @@ class Singleton_updater(object):
 			try:
 				shutil.rmtree(local)
 				os.makedirs(local)
-			except Exception:
+			except OSError:
 				error = "failed to remove existing staging directory"
 		else:
 			try:
 				os.makedirs(local)
-			except Exception:
+			except OSError:
 				error = "failed to create staging directory"
 
 		if error != None:
@@ -840,7 +840,7 @@ class Singleton_updater(object):
 				return False
 			if self._verbose: print("Successfully downloaded update zip")
 			return True
-		except Exception as e:
+		except (urllib.error.URLError, OSError, ValueError) as e:
 			self._error = "Error retrieving download, bad link?"
 			self._error_msg = "Error: {}".format(e)
 			if self._verbose:
@@ -861,14 +861,14 @@ class Singleton_updater(object):
 		if os.path.isdir(local):
 			try:
 				shutil.rmtree(local)
-			except Exception:
+			except OSError:
 				if self._verbose:print("Failed to removed previous backup folder, contininuing")
 
 		# remove the temp folder; shouldn't exist but could if previously interrupted
 		if os.path.isdir(tempdest):
 			try:
 				shutil.rmtree(tempdest)
-			except Exception:
+			except OSError:
 				if self._verbose:print("Failed to remove existing temp folder, contininuing")
 		# make the full addon copy, which temporarily places outside the addon folder
 		if self._backup_ignore_patterns != None:
@@ -922,14 +922,14 @@ class Singleton_updater(object):
 			os.makedirs(outdir)
 			if self._verbose:
 				print("Source folder cleared and recreated")
-		except Exception:
+		except OSError:
 			pass
 
 		# Create parent directories if needed, would not be relevant unless
 		# installing addon into another location or via an addon manager
 		try:
 			os.mkdir(outdir)
-		except Exception as err:
+		except OSError as err:
 			print("Error occurred while making extract dir:")
 			print(str(err))
 			self._error = "Install failed"
@@ -1069,7 +1069,7 @@ class Singleton_updater(object):
 					shutil.rmtree(os.path.join(base,f))
 					print("Clean removing folder and contents {}".format(os.path.join(base,f)))
 
-			except Exception as err:
+			except OSError as err:
 				error = "failed to create clean existing addon folder"
 				print(error, str(err))
 
@@ -1127,7 +1127,7 @@ class Singleton_updater(object):
 		# now remove the temp staging folder and downloaded zip
 		try:
 			shutil.rmtree(staging_path)
-		except Exception:
+		except OSError:
 			error = "Error: Failed to remove existing staging directory, consider manually removing "+staging_path
 			if self._verbose: print(error)
 
@@ -1515,7 +1515,7 @@ class Singleton_updater(object):
 			os.rename(old_json_path, json_path)
 		except FileNotFoundError:
 			pass
-		except Exception as err:
+		except OSError as err:
 			print("Other OS error occurred while trying to rename old JSON")
 			print(err)
 		return json_path

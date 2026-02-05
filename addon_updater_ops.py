@@ -1366,7 +1366,7 @@ def register(bl_info):
 
 	# Optional checksum hardening.
 	# If require_checksum is True and no checksum metadata exists, updates are blocked.
-	updater.require_checksum = False
+	updater.require_checksum = True
 	updater.checksum_url = None
 
 	# if using "include_branches",

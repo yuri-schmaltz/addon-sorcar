@@ -2,6 +2,8 @@ import argparse
 import zipfile
 from pathlib import Path
 
+ADDON_DIR_NAME = "sorcar"
+
 EXCLUDED_DIRS = {
     ".git",
     ".github",
@@ -49,7 +51,7 @@ def main() -> None:
 
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path, rel_path in files:
-            archive.write(path, rel_path.as_posix())
+            archive.write(path, (Path(ADDON_DIR_NAME) / rel_path).as_posix())
 
     print(output.as_posix())
 

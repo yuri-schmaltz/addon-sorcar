@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sorcar smoke test.")
     parser.add_argument("--addon-module", default="", help="Addon module name (optional).")
     parser.add_argument("--addon-zip", default="", help="Addon zip to install before running tests.")
-    parser.add_argument("--cycles", type=int, default=3, help="Enable/disable cycles.")
+    parser.add_argument("--toggle-count", type=int, default=3, help="Enable/disable cycles.")
     return parser.parse_args(argv)
 
 def detect_addon_module(module_hint: str, addon_utils_module) -> str:
@@ -68,7 +68,7 @@ def run() -> None:
     bpy.ops.preferences.addon_enable(module=module_name)
     importlib.import_module(module_name)
 
-    for _ in range(args.cycles):
+    for _ in range(args.toggle_count):
         bpy.ops.preferences.addon_disable(module=module_name)
         bpy.ops.preferences.addon_enable(module=module_name)
         assert_true(count_update_handlers(bpy) <= 1, "Duplicate frame_change_post handlers detected")

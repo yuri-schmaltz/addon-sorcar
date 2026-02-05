@@ -1,4 +1,4 @@
-data_hora: 2026-02-05T14:13:52.6344325-03:00
+data_hora: 2026-02-05T14:34:28.128889
 compileall -q . -> SUCCESS
 scripts_help:
 - python tests/smoke/smoke_addon.py --help -> SUCCESS
@@ -6,4 +6,4 @@ scripts_help:
 packaging:
 - python tests/smoke/package_addon.py --output sorcar-smoke.zip -> SUCCESS
 runtime_blender:
-- blender --version -> NOT AVAILABLE IN PATH (NAO VERIFICADO)
+- blender --version -> Blender 5.0.0

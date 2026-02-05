@@ -1,4 +1,4 @@
-data_hora: 2026-02-05T14:13:41.7765859-03:00
+data_hora: 2026-02-05T14:41:06.7823399-03:00
 
 # eval_builtin
 
@@ -25,9 +25,6 @@ nodes/inputs/ScImportFbx.py:30:            use_custom_normals = self.inputs["Use
 # invalid_index_array_condition
 
 # checksum_hardening
-addon_updater_ops.py:1368:	# If require_checksum is True and no checksum metadata exists, updates are blocked.
-addon_updater_ops.py:1369:	updater.require_checksum = False
-addon_updater_ops.py:1370:	updater.checksum_url = None
 addon_updater.py:108:		self._require_checksum = False
 addon_updater.py:109:		self._checksum_url = None
 addon_updater.py:350:	def require_checksum(self):
@@ -51,6 +48,9 @@ addon_updater.py:771:		for checksum_url in checksum_urls:
 addon_updater.py:772:			checksum_text = self.fetch_text_silent(checksum_url)
 addon_updater.py:784:		elif self._require_checksum:
 addon_updater.py:839:			if (not self.validate_download(url)):
+addon_updater_ops.py:1368:	# If require_checksum is True and no checksum metadata exists, updates are blocked.
+addon_updater_ops.py:1369:	updater.require_checksum = True
+addon_updater_ops.py:1370:	updater.checksum_url = None
 
 # keymap_hardening
 __init__.py:49:    enable_shortcuts: BoolProperty(
@@ -64,7 +64,7 @@ __init__.py:200:            enable_shortcuts = prefs.preferences.enable_shortcut
 __init__.py:202:        if (enable_shortcuts):
 
 # smoke_ci
-.github/workflows/blender-smoke.yml:27:        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
-.github/workflows/blender-smoke.yml:30:        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --cycles 3 --output sorcar-bench.json
-tests/README.md:14:blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
-tests/README.md:20:blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --cycles 5 --output sorcar-bench.json
+tests/README.md:14:blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --toggle-count 3
+tests/README.md:20:blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --iterations 5 --output sorcar-bench.json
+.github/workflows/blender-smoke.yml:27:        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --toggle-count 3
+.github/workflows/blender-smoke.yml:30:        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --iterations 3 --output sorcar-bench.json
