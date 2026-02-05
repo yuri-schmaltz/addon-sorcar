@@ -46,6 +46,12 @@ class SorcarPreferences(AddonPreferences):
     bl_idname = __package__
     bl_label = "Sorcar Preferences"
 
+    enable_shortcuts: BoolProperty(
+        name = "Enable Shortcuts",
+        description = "Register Sorcar shortcuts in the Node Editor keymap",
+        default = True,
+    )
+
     auto_check_update: BoolProperty(
     name = "Auto-check for Update",
     description = "If enabled, auto-check for updates using an interval",
@@ -78,6 +84,7 @@ class SorcarPreferences(AddonPreferences):
         max=59
     )
     def draw(self, context):
+        self.layout.prop(self, "enable_shortcuts")
         addon_updater_ops.update_settings_ui(self, context)
 
 def import_ops(path="./"):
@@ -110,15 +117,45 @@ def import_nodes(path="./"):
             print_log("IMPORT NODE", bpy.path.display_name(cat), msg=i[0])
     return out
 
+KEYMAP_SPECS = [
+    ("sorcar.execute_node", 'E', 'PRESS', {}),
+    ("sorcar.clear_preview", 'E', 'PRESS', {"alt": True}),
+    ("sorcar.group_nodes", 'G', 'PRESS', {"ctrl": True}),
+    ("sorcar.edit_group", 'TAB', 'PRESS', {}),
+]
+
+def _keymap_match(kmi, key_type, key_value, kwargs):
+    return (
+        kmi.type == key_type
+        and kmi.value == key_value
+        and kmi.shift == kwargs.get("shift", False)
+        and kmi.ctrl == kwargs.get("ctrl", False)
+        and kmi.alt == kwargs.get("alt", False)
+        and kmi.oskey == kwargs.get("oskey", False)
+        and kmi.key_modifier == kwargs.get("key_modifier", 'NONE')
+    )
+
 def init_keymaps():
     kc = bpy.context.window_manager.keyconfigs.addon
+    if (kc is None):
+        print_log("KEYMAP", msg="Addon keyconfig unavailable")
+        return None, []
     km = kc.keymaps.new(name="Node Generic", space_type='NODE_EDITOR')
-    kmi = [
-        km.keymap_items.new("sorcar.execute_node", 'E', 'PRESS'),
-        km.keymap_items.new("sorcar.clear_preview", 'E', 'PRESS', alt=True),
-        km.keymap_items.new("sorcar.group_nodes", 'G', 'PRESS', ctrl=True),
-        km.keymap_items.new("sorcar.edit_group", 'TAB', 'PRESS')
-    ]
+    kmi = []
+    for op_idname, key_type, key_value, kwargs in KEYMAP_SPECS:
+        duplicate = False
+        for existing in km.keymap_items:
+            if (_keymap_match(existing, key_type, key_value, kwargs)):
+                if (existing.idname == op_idname):
+                    duplicate = True
+                    break
+                if (existing.active):
+                    print_log("KEYMAP CONFLICT", msg="{} conflicts with {}".format(op_idname, existing.idname))
+                    duplicate = True
+                    break
+        if (duplicate):
+            continue
+        kmi.append(km.keymap_items.new(op_idname, key_type, key_value, **kwargs))
     return km, kmi
 
 all_classes = []
@@ -153,10 +190,23 @@ def register():
         bpy.app.handlers.frame_change_post.append(update_each_frame)
     
     if (not bpy.app.background):
-        km, kmi = init_keymaps()
-        for k in kmi:
-            k.active = True
-            addon_keymaps.append((km, k))
+        prefs = None
+        if hasattr(bpy.context, "preferences"):
+            prefs = bpy.context.preferences.addons.get(__package__)
+        elif hasattr(bpy.context, "user_preferences"):
+            prefs = bpy.context.user_preferences.addons.get(__package__)
+        enable_shortcuts = True
+        if (prefs and hasattr(prefs, "preferences")):
+            enable_shortcuts = prefs.preferences.enable_shortcuts
+
+        if (enable_shortcuts):
+            km, kmi = init_keymaps()
+            if (km):
+                for k in kmi:
+                    k.active = True
+                    addon_keymaps.append((km, k))
+        else:
+            print_log("KEYMAP", msg="Shortcuts disabled in preferences")
     
     addon_updater_ops.register(bl_info)
     

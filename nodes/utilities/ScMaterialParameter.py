@@ -3,6 +3,7 @@ import bpy
 from bpy.props import PointerProperty, EnumProperty, StringProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_literal_eval
 
 class ScMaterialParameter(Node, ScNode):
     bl_idname = "ScMaterialParameter"
@@ -40,10 +41,11 @@ class ScMaterialParameter(Node, ScNode):
         )
     
     def functionality(self):
+        value = safe_literal_eval(self.inputs["Value"].default_value, self.inputs["Value"].default_value)
         if (self.prop_type == "INPUT"):
-            self.prop_mat.node_tree.nodes[self.prop_node].inputs[self.prop_socket].default_value = eval(self.inputs["Value"].default_value)
+            self.prop_mat.node_tree.nodes[self.prop_node].inputs[self.prop_socket].default_value = value
         else:
-            self.prop_mat.node_tree.nodes[self.prop_node].outputs[self.prop_socket].default_value = eval(self.inputs["Value"].default_value)
+            self.prop_mat.node_tree.nodes[self.prop_node].outputs[self.prop_socket].default_value = value
     
     def post_execute(self):
         out = {}

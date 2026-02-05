@@ -4,6 +4,7 @@ import math
 from bpy.props import IntProperty, BoolProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScAddElement(Node, ScNode):
     bl_idname = "ScAddElement"
@@ -22,7 +23,7 @@ class ScAddElement(Node, ScNode):
 
     def post_execute(self):
         out = {}
-        arr = eval(self.inputs["Array"].default_value)
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         if (self.inputs["Use Index"].default_value):
             arr.insert(int(self.inputs["Index"].default_value), self.inputs["Element"].default_value)
         else:

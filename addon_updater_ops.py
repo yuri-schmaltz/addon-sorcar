@@ -529,7 +529,7 @@ class addon_updater_restore_backup(bpy.types.Operator):
 	def poll(cls, context):
 		try:
 			return os.path.isdir(os.path.join(updater.stage_path,"backup"))
-		except:
+		except (TypeError, OSError):
 			return False
 
 	def execute(self, context):
@@ -611,7 +611,7 @@ def updater_run_success_popup_handler(scene):
 	try:
 		bpy.app.handlers.scene_update_post.remove(
 				updater_run_success_popup_handler)
-	except:
+	except ValueError:
 		pass
 
 	atr = addon_updater_updated_successful.bl_idname.split(".")
@@ -630,7 +630,7 @@ def updater_run_install_popup_handler(scene):
 	try:
 		bpy.app.handlers.scene_update_post.remove(
 				updater_run_install_popup_handler)
-	except:
+	except ValueError:
 		pass
 
 	if "ignore" in updater.json and updater.json["ignore"] == True:
@@ -1363,6 +1363,11 @@ def register(bl_info):
 	# Therefore, setting True above will filter out any non-annoted tags
 	# note 2: Using this option will also display the release name instead of
 	# just the tag name, bear this in mind given the skip_tag_function filtering above
+
+	# Optional checksum hardening.
+	# If require_checksum is True and no checksum metadata exists, updates are blocked.
+	updater.require_checksum = False
+	updater.checksum_url = None
 
 	# if using "include_branches",
 	# updater.include_branch_list defaults to ['master'] branch if set to none

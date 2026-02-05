@@ -3,6 +3,7 @@ import math
 
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScClearArray(Node, ScNode):
     bl_idname = "ScClearArray"
@@ -15,7 +16,7 @@ class ScClearArray(Node, ScNode):
 
     def post_execute(self):
         out = {}
-        arr = eval(self.inputs["Array"].default_value)
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         arr.clear()
         out["Empty Array"] = repr(arr)
         return out

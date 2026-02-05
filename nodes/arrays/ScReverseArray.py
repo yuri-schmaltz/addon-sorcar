@@ -3,6 +3,7 @@ import math
 
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScReverseArray(Node, ScNode):
     bl_idname = "ScReverseArray"
@@ -15,7 +16,7 @@ class ScReverseArray(Node, ScNode):
 
     def post_execute(self):
         out = {}
-        arr = eval(self.inputs["Array"].default_value)
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         arr.reverse()
         out["New Array"] = repr(arr)
         return out

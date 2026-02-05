@@ -4,7 +4,7 @@ from bpy.props import EnumProperty, StringProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScEditOperatorNode
-from ...helper import print_log
+from ...helper import safe_parse_object_array
 
 class ScSeparate(Node, ScEditOperatorNode):
     bl_idname = "ScSeparate"
@@ -45,10 +45,5 @@ class ScSeparate(Node, ScEditOperatorNode):
         return ret
     
     def free(self):
-        for object in self.prop_obj_array[1:-1].split(', '):
-            try:
-                obj = eval(object)
-            except:
-                print_log(self.id_data.name, self.name, "free", "Invalid object: " + object)
-                continue
+        for obj in safe_parse_object_array(self.prop_obj_array):
             self.id_data.unregister_object(obj)

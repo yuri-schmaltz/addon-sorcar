@@ -4,6 +4,7 @@ from bpy.props import StringProperty, IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_selection import ScSelectionNode
+from ...helper import safe_parse_int_list
 
 class ScSelectManually(Node, ScSelectionNode):
     bl_idname = "ScSelectManually"
@@ -32,11 +33,11 @@ class ScSelectManually(Node, ScSelectionNode):
     def functionality(self):
         bpy.ops.mesh.select_all(action="DESELECT")
         bpy.ops.object.mode_set(mode="OBJECT")
-        for i in eval(self.prop_vert):
+        for i in safe_parse_int_list(self.prop_vert):
             self.inputs["Object"].default_value.data.vertices[i].select = True
-        for i in eval(self.prop_edge):
+        for i in safe_parse_int_list(self.prop_edge):
             self.inputs["Object"].default_value.data.edges[i].select = True
-        for i in eval(self.prop_face):
+        for i in safe_parse_int_list(self.prop_face):
             self.inputs["Object"].default_value.data.polygons[i].select = True
             self.inputs["Object"].default_value.data.polygons.active = self.prop_active
         bpy.ops.object.mode_set(mode="EDIT")

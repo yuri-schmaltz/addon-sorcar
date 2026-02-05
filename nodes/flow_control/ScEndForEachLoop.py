@@ -3,6 +3,7 @@ import bpy
 from bpy.props import IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScEndForEachLoop(Node, ScNode):
     bl_idname = "ScEndForEachLoop"
@@ -27,11 +28,11 @@ class ScEndForEachLoop(Node, ScNode):
     
     def error_condition(self):
         return (
-            len(eval(self.inputs["Array"].default_value)) == 0
+            len(safe_parse_array(self.inputs["Array"].default_value, [])) == 0
         )
     
     def functionality(self):
-        for i in eval(self.inputs["Array"].default_value):
+        for i in safe_parse_array(self.inputs["Array"].default_value, []):
             self.inputs["Begin For-Each Loop"].links[0].from_node.out_index += 1
             self.inputs["Begin For-Each Loop"].links[0].from_node.out_element = repr(i)
             self.inputs["In"].execute(True)

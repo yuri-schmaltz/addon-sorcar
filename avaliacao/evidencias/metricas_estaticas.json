@@ -1,0 +1,11 @@
+{
+  "python_files": 301,
+  "node_files": 261,
+  "operator_files": 5,
+  "ui_files": 4,
+  "eval_calls": 0,
+  "exec_calls": 1,
+  "bare_except": 19,
+  "try_blocks": 54,
+  "subprocess_calls": 0
+}

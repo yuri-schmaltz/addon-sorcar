@@ -4,6 +4,7 @@ from bpy.props import EnumProperty, StringProperty, BoolProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_selection import ScSelectionNode
+from ...helper import safe_parse_int_list, safe_parse_array
 
 class ScSelectByIndexArray(Node, ScSelectionNode):
     bl_idname = "ScSelectByIndexArray"
@@ -20,9 +21,10 @@ class ScSelectByIndexArray(Node, ScSelectionNode):
         self.inputs.new("ScNodeSocketBool", "Deselect").init("in_deselect")
     
     def error_condition(self):
+        index_array = safe_parse_array(self.inputs["Index Array"].default_value, None)
         return(
             super().error_condition()
-            or len(eval(self.inputs["Index Array"].default_value)) < 0
+            or index_array is None
         )
     
     def functionality(self):
@@ -40,7 +42,7 @@ class ScSelectByIndexArray(Node, ScSelectionNode):
             bpy.ops.mesh.select_all(action="DESELECT")
             bpy.ops.object.mode_set(mode="OBJECT")
         for d in data:
-            for i in eval(self.inputs["Index Array"].default_value):
+            for i in safe_parse_int_list(self.inputs["Index Array"].default_value):
                 index = max(0, min(i, len(d)-1))
                 d[index].select = not self.inputs["Deselect"].default_value
         bpy.ops.object.mode_set(mode="EDIT")

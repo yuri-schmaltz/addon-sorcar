@@ -4,6 +4,7 @@ import math
 from bpy.props import IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScRemoveElement(Node, ScNode):
     bl_idname = "ScRemoveElement"
@@ -17,10 +18,10 @@ class ScRemoveElement(Node, ScNode):
 
     def post_execute(self):
         out = {}
-        arr = eval(self.inputs["Array"].default_value)
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         try:
             arr.remove(self.inputs["Element"].default_value)
-        except:
+        except ValueError:
             pass
         out["New Array"] = repr(arr)
         return out

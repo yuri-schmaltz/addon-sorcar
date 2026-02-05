@@ -4,6 +4,7 @@ import math
 from bpy.props import IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScPopElement(Node, ScNode):
     bl_idname = "ScPopElement"
@@ -20,10 +21,10 @@ class ScPopElement(Node, ScNode):
 
     def post_execute(self):
         out = {}
-        arr = eval(self.inputs["Array"].default_value)
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         try:
             elem = arr.pop(int(self.inputs["Index"].default_value))
-        except:
+        except (TypeError, ValueError, IndexError):
             elem = None
         out["New Array"] = repr(arr)
         out["Element"] = repr(elem)

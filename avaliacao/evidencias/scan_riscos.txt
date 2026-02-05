@@ -1,0 +1,89 @@
+data_hora: 2026-02-04T20:15:06.1353210-03:00
+
+# eval_builtin
+
+# exec_builtin
+nodes\utilities\ScCustomPythonScript.py:57:            exec(self.inputs["Script"].default_value)
+
+# bare_except
+addon_updater.py:171:		except:
+addon_updater.py:217:			except:
+addon_updater.py:265:		except:
+addon_updater.py:280:		except:
+addon_updater.py:290:		except:
+addon_updater.py:312:		except:
+addon_updater.py:356:		except:
+addon_updater.py:382:		except:
+addon_updater.py:407:			except:
+addon_updater.py:453:		except:
+addon_updater.py:463:		except:
+addon_updater.py:475:		except:
+addon_updater.py:807:			except:
+addon_updater.py:812:			except:
+addon_updater.py:864:			except:
+addon_updater.py:871:			except:
+addon_updater.py:925:		except:
+addon_updater.py:1130:		except:
+helper.py:352:    except:
+
+# scene_update_post
+addon_updater_ops.py:612:		bpy.app.handlers.scene_update_post.remove(
+addon_updater_ops.py:631:		bpy.app.handlers.scene_update_post.remove(
+addon_updater_ops.py:670:				bpy.app.handlers.scene_update_post and \
+addon_updater_ops.py:672:		bpy.app.handlers.scene_update_post.append(
+addon_updater_ops.py:697:		#bpy.app.handlers.scene_update_post.append(updater_run_success_popup_handler)
+addon_updater_ops.py:807:					bpy.app.handlers.scene_update_post \
+addon_updater_ops.py:809:			bpy.app.handlers.scene_update_post.append(
+
+# _create_unverified_context
+
+# use_custom_normals
+nodes/inputs/ScImportFbx.py:19:        self.inputs.new("ScNodeSocketBool", "Use Custom Normals").init("in_uv")
+nodes/inputs/ScImportFbx.py:30:            use_custom_normals = self.inputs["Use Custom Normals"].default_value
+
+# invalid_index_array_condition
+
+# checksum_hardening
+addon_updater_ops.py:1368:	# If require_checksum is True and no checksum metadata exists, updates are blocked.
+addon_updater_ops.py:1369:	updater.require_checksum = False
+addon_updater_ops.py:1370:	updater.checksum_url = None
+addon_updater.py:108:		self._require_checksum = False
+addon_updater.py:109:		self._checksum_url = None
+addon_updater.py:350:	def require_checksum(self):
+addon_updater.py:351:		return self._require_checksum
+addon_updater.py:352:	@require_checksum.setter
+addon_updater.py:353:	def require_checksum(self, value):
+addon_updater.py:355:			self._require_checksum = bool(value)
+addon_updater.py:357:			raise ValueError("require_checksum must be a boolean value")
+addon_updater.py:360:	def checksum_url(self):
+addon_updater.py:361:		return self._checksum_url
+addon_updater.py:362:	@checksum_url.setter
+addon_updater.py:363:	def checksum_url(self, value):
+addon_updater.py:365:			self._checksum_url = None
+addon_updater.py:369:		self._checksum_url = value
+addon_updater.py:747:	def validate_download(self, download_url):
+addon_updater.py:766:		checksum_urls = []
+addon_updater.py:767:		if self._checksum_url:
+addon_updater.py:768:			checksum_urls.append(self._checksum_url)
+addon_updater.py:769:		checksum_urls.extend([download_url + ".sha256", download_url + ".sha256sum"])
+addon_updater.py:771:		for checksum_url in checksum_urls:
+addon_updater.py:772:			checksum_text = self.fetch_text_silent(checksum_url)
+addon_updater.py:784:		elif self._require_checksum:
+addon_updater.py:839:			if (not self.validate_download(url)):
+
+# keymap_hardening
+__init__.py:49:    enable_shortcuts: BoolProperty(
+__init__.py:87:        self.layout.prop(self, "enable_shortcuts")
+__init__.py:120:KEYMAP_SPECS = [
+__init__.py:127:def _keymap_match(kmi, key_type, key_value, kwargs):
+__init__.py:145:    for op_idname, key_type, key_value, kwargs in KEYMAP_SPECS:
+__init__.py:148:            if (_keymap_match(existing, key_type, key_value, kwargs)):
+__init__.py:198:        enable_shortcuts = True
+__init__.py:200:            enable_shortcuts = prefs.preferences.enable_shortcuts
+__init__.py:202:        if (enable_shortcuts):
+
+# smoke_ci
+tests/README.md:14:blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
+tests/README.md:20:blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 5 --cycles 5 --output sorcar-bench.json
+.github/workflows/blender-smoke.yml:27:        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
+.github/workflows/blender-smoke.yml:30:        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --cycles 3 --output sorcar-bench.json

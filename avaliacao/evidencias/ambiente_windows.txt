@@ -1,0 +1,20 @@
+
+Caption        : Microsoft Windows 11 Pro
+Version        : 10.0.26100
+BuildNumber    : 26100
+OSArchitecture : 64 bits
+
+
+Name                      : AMD Ryzen 5 PRO 8500GE w/ Radeon 740M Graphics 
+NumberOfCores             : 6
+NumberOfLogicalProcessors : 12
+
+
+TotalPhysicalMemory : 33424384000
+
+
+Name                     DriverVersion
+----                     -------------
+AMD Radeon 740M Graphics 32.0.21016.3003
+
+

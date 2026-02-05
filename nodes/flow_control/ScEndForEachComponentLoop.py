@@ -3,6 +3,7 @@ import bpy
 from bpy.props import IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_int_list
 
 class ScEndForEachComponentLoop(Node, ScNode):
     bl_idname = "ScEndForEachComponentLoop"
@@ -24,7 +25,7 @@ class ScEndForEachComponentLoop(Node, ScNode):
         )
     
     def functionality(self):
-        for i in eval(self.inputs["Begin For-Each Component Loop"].links[0].from_node.prop_components):
+        for i in safe_parse_int_list(self.inputs["Begin For-Each Component Loop"].links[0].from_node.prop_components):
             self.inputs["Begin For-Each Component Loop"].links[0].from_node.out_index = i
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.select_all(action="DESELECT")

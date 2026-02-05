@@ -1,0 +1,36 @@
+name: Blender Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "**.py"
+      - ".github/workflows/blender-smoke.yml"
+      - "tests/**"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+
+      - name: Package Addon
+        run: python tests/smoke/package_addon.py --output sorcar-smoke.zip
+
+      - name: Run Smoke Test
+        run: blender -b --factory-startup -P tests/smoke/smoke_addon.py -- --addon-zip sorcar-smoke.zip --cycles 3
+
+      - name: Run Benchmark
+        run: blender -b --factory-startup -P tests/perf/benchmark_execute.py -- --addon-zip sorcar-smoke.zip --tree-count 3 --cycles 3 --output sorcar-bench.json
+
+      - name: Upload Benchmark Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sorcar-bench
+          path: sorcar-bench.json

@@ -1,7 +1,6 @@
 import bpy
 
 from bpy.props import StringProperty, BoolProperty
-from mathutils import Vector
 from ...helper import print_log, convert_data
 
 class ScNodeSocket:
@@ -90,5 +89,11 @@ class ScNodeSocket:
                         return True
                     return False
                 self.socket_error = False
-                return self.set(eval("bpy.data.node_groups['" + self.id_data.name + "'].nodes['" + self.node.name + "']." + self.default_prop))
+                node_tree = bpy.data.node_groups.get(self.id_data.name)
+                if (not node_tree):
+                    return False
+                node = node_tree.nodes.get(self.node.name)
+                if (not node or not hasattr(node, self.default_prop)):
+                    return False
+                return self.set(getattr(node, self.default_prop))
             return False

@@ -4,7 +4,7 @@ import os
 from bpy.props import StringProperty, PointerProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
-from ...helper import remove_object
+from ...helper import extract_data_references
 
 class ScImportSvg(Node, ScNode):
     bl_idname = "ScImportSvg"
@@ -38,7 +38,8 @@ class ScImportSvg(Node, ScNode):
     
     def post_execute(self):
         out = {}
-        collection = [c for c in bpy.data.collections if c not in eval(self.prop_collections)][0]
+        previous_collections = extract_data_references(self.prop_collections, "collections")
+        collection = [c for c in bpy.data.collections if c not in previous_collections][0]
         bpy.context.view_layer.objects.active = collection.objects[0]
         self.out_curve = bpy.context.active_object
         self.id_data.register_object(self.out_curve)

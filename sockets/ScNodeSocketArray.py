@@ -4,6 +4,7 @@ from bpy.props import StringProperty
 from bpy.types import NodeSocket
 from ._base.socket_base import ScNodeSocket
 from ..nodes._base.node_base import ScNode
+from ..helper import safe_parse_array
 
 class ScNodeSocketArray(NodeSocket, ScNodeSocket):
     bl_idname = "ScNodeSocketArray"
@@ -15,14 +16,10 @@ class ScNodeSocketArray(NodeSocket, ScNodeSocket):
     default_type: StringProperty(default="ARRAY")
 
     def get_label(self):
-        arr = []
-        arr_len = 0
-        try:
-            arr = eval(self.default_value)
-            arr_len = len(arr)
-        except:
-            arr_len = self.default_value.count(',') + 1
-        return str(arr_len)
+        arr = safe_parse_array(self.default_value, None)
+        if (arr is None):
+            return "0"
+        return str(len(arr))
     
     def draw(self, context, layout, node, text):
         if (self.is_output or self.is_linked):

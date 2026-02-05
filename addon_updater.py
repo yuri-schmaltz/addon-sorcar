@@ -24,7 +24,7 @@ https://github.com/CGCookie/blender-addon-updater
 """
 
 import errno
-import ssl
+import hashlib
 import urllib.request
 import urllib
 import os
@@ -104,6 +104,9 @@ class Singleton_updater(object):
 		self._update_link = None
 		self._update_version = None
 		self._source_zip = None
+		self._download_sha256 = None
+		self._require_checksum = False
+		self._checksum_url = None
 		self._check_thread = None
 		self._select_link = None
 		self.skip_tag = None
@@ -342,6 +345,32 @@ class Singleton_updater(object):
 			raise ValueError("remove_pre_update_patterns needs to be in a list format")
 		else:
 			self._remove_pre_update_patterns = value
+
+	@property
+	def require_checksum(self):
+		return self._require_checksum
+	@require_checksum.setter
+	def require_checksum(self, value):
+		try:
+			self._require_checksum = bool(value)
+		except:
+			raise ValueError("require_checksum must be a boolean value")
+
+	@property
+	def checksum_url(self):
+		return self._checksum_url
+	@checksum_url.setter
+	def checksum_url(self, value):
+		if value == None or value == "":
+			self._checksum_url = None
+			return
+		if self.check_is_url(value) == False:
+			raise ValueError("Not a valid URL: " + value)
+		self._checksum_url = value
+
+	@property
+	def download_sha256(self):
+		return self._download_sha256
 
 	@property
 	def repo(self):
@@ -623,12 +652,6 @@ class Singleton_updater(object):
 	def get_raw(self, url):
 		# print("Raw request:", url)
 		request = urllib.request.Request(url)
-		try:
-			context = ssl._create_unverified_context()
-		except:
-			# some blender packaged python versions don't have this, largely
-			# useful for local network setups otherwise minimal impact
-			context = None
 
 		# setup private request headers if appropriate
 		if self._engine.token != None:
@@ -639,10 +662,7 @@ class Singleton_updater(object):
 
 		# run the request
 		try:
-			if context:
-				result = urllib.request.urlopen(request, context=context)
-			else:
-				result = urllib.request.urlopen(request)
+			result = urllib.request.urlopen(request)
 		except urllib.error.HTTPError as e:
 			if str(e.code) == "403":
 				self._error = "HTTP error (access denied)"
@@ -688,6 +708,88 @@ class Singleton_updater(object):
 		else:
 			return None
 
+	def fetch_text_silent(self, url):
+		"""Fetch text without mutating updater state."""
+		request = urllib.request.Request(url)
+
+		if self._engine.token != None and self._engine.name == "gitlab":
+			request.add_header('PRIVATE-TOKEN', self._engine.token)
+
+		try:
+			result = urllib.request.urlopen(request)
+		except Exception:
+			return None
+
+		try:
+			result_string = result.read()
+			return result_string.decode()
+		except Exception:
+			return None
+		finally:
+			result.close()
+
+	def extract_sha256(self, text):
+		if (text == None):
+			return None
+		for token in str(text).replace("\n", " ").split(" "):
+			candidate = token.strip().lower()
+			if (len(candidate) == 64 and all(c in "0123456789abcdef" for c in candidate)):
+				return candidate
+		return None
+
+	def calculate_file_sha256(self, filepath):
+		hash_obj = hashlib.sha256()
+		with open(filepath, "rb") as file:
+			for chunk in iter(lambda: file.read(1024 * 64), b""):
+				hash_obj.update(chunk)
+		return hash_obj.hexdigest()
+
+	def validate_download(self, download_url):
+		if (not self._source_zip or not os.path.isfile(self._source_zip)):
+			self._error = "Downloaded file missing"
+			self._error_msg = "Source zip not found for checksum validation"
+			return False
+
+		if (os.path.getsize(self._source_zip) == 0):
+			self._error = "Downloaded file invalid"
+			self._error_msg = "Source zip is empty"
+			return False
+
+		try:
+			self._download_sha256 = self.calculate_file_sha256(self._source_zip)
+		except Exception as err:
+			self._error = "Checksum generation failed"
+			self._error_msg = str(err)
+			return False
+
+		expected_checksum = None
+		checksum_urls = []
+		if self._checksum_url:
+			checksum_urls.append(self._checksum_url)
+		checksum_urls.extend([download_url + ".sha256", download_url + ".sha256sum"])
+
+		for checksum_url in checksum_urls:
+			checksum_text = self.fetch_text_silent(checksum_url)
+			expected_checksum = self.extract_sha256(checksum_text)
+			if expected_checksum:
+				break
+
+		if expected_checksum:
+			if (expected_checksum != self._download_sha256):
+				self._error = "Checksum mismatch"
+				self._error_msg = "Downloaded file checksum does not match expected SHA256"
+				return False
+			if self._verbose:
+				print("Download checksum verified:", expected_checksum)
+		elif self._require_checksum:
+			self._error = "Checksum required"
+			self._error_msg = "No checksum metadata found for download"
+			return False
+		elif self._verbose:
+			print("Checksum metadata not available; continuing with TLS-validated download")
+
+		return True
+
 
 	# create a working directory and download the new files
 	def stage_repository(self, url):
@@ -725,7 +827,6 @@ class Singleton_updater(object):
 		if self._verbose: print("Starting download update zip")
 		try:
 			request = urllib.request.Request(url)
-			context = ssl._create_unverified_context()
 
 			# setup private token if appropriate
 			if self._engine.token != None:
@@ -733,8 +834,10 @@ class Singleton_updater(object):
 					request.add_header('PRIVATE-TOKEN',self._engine.token)
 				else:
 					if self._verbose: print("Tokens not setup for selected engine yet")
-			self.urlretrieve(urllib.request.urlopen(request,context=context), self._source_zip)
+			self.urlretrieve(urllib.request.urlopen(request), self._source_zip)
 			# add additional checks on file size being non-zero
+			if (not self.validate_download(url)):
+				return False
 			if self._verbose: print("Successfully downloaded update zip")
 			return True
 		except Exception as e:
@@ -1056,6 +1159,7 @@ class Singleton_updater(object):
 		self._update_link = None
 		self._update_version = None
 		self._source_zip = None
+		self._download_sha256 = None
 		self._error = None
 		self._error_msg = None
 

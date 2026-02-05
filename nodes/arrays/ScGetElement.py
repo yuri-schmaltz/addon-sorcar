@@ -3,6 +3,7 @@ import bpy
 from bpy.props import IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScGetElement(Node, ScNode):
     bl_idname = "ScGetElement"
@@ -18,8 +19,9 @@ class ScGetElement(Node, ScNode):
     
     def post_execute(self):
         out = {}
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         try:
-            out["Element"] = repr(eval(self.inputs["Array"].default_value)[int(self.inputs["Index"].default_value)])
-        except:
+            out["Element"] = repr(arr[int(self.inputs["Index"].default_value)])
+        except (TypeError, ValueError, IndexError):
             out["Element"] = None
         return out

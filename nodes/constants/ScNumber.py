@@ -1,4 +1,6 @@
 import bpy
+import base64
+import pickle
 import numpy
 
 from bpy.props import EnumProperty, FloatProperty, IntProperty, BoolProperty, StringProperty
@@ -45,10 +47,14 @@ class ScNumber(Node, ScNode):
         out = {}
         if (self.inputs["Random"].default_value):
             rs = numpy.random.RandomState(int(self.inputs["Seed"].default_value))
-            if (not self.first_time):
-                rs.set_state(eval(self.prop_random_state))
+            if (not self.first_time and self.prop_random_state != ""):
+                try:
+                    state = pickle.loads(base64.b64decode(self.prop_random_state.encode("ascii")))
+                    rs.set_state(state)
+                except (TypeError, ValueError, pickle.PickleError):
+                    pass
             out["Value"] = rs.rand()
-            self.prop_random_state = repr(rs.get_state())
+            self.prop_random_state = base64.b64encode(pickle.dumps(rs.get_state())).decode("ascii")
         else:
             if (self.prop_type == "FLOAT"):
                 out["Value"] = self.prop_float

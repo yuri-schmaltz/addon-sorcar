@@ -4,6 +4,7 @@ import math
 from bpy.props import BoolProperty, IntProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
+from ...helper import safe_parse_array
 
 class ScSearchElement(Node, ScNode):
     bl_idname = "ScSearchElement"
@@ -24,12 +25,13 @@ class ScSearchElement(Node, ScNode):
 
     def post_execute(self):
         out = {}
+        arr = safe_parse_array(self.inputs["Array"].default_value, [])
         try:
             if (self.inputs["Use Range"].default_value):
-                index = eval(self.inputs["Array"].default_value).index(self.inputs["Element"].default_value, int(self.inputs["Start Index"].default_value), int(self.inputs["End Index"].default_value))
+                index = arr.index(self.inputs["Element"].default_value, int(self.inputs["Start Index"].default_value), int(self.inputs["End Index"].default_value))
             else:
-                index = eval(self.inputs["Array"].default_value).index(self.inputs["Element"].default_value)
-        except:
+                index = arr.index(self.inputs["Element"].default_value)
+        except (TypeError, ValueError):
             index = -1
         out["Index"] = index
         return out

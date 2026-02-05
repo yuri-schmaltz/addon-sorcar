@@ -4,7 +4,7 @@ from bpy.props import FloatProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
-from ...helper import focus_on_object
+from ...helper import focus_on_object, safe_parse_object_array
 
 class ScMergeObjects(Node, ScObjectOperatorNode):
     bl_idname = "ScMergeObjects"
@@ -17,12 +17,12 @@ class ScMergeObjects(Node, ScObjectOperatorNode):
     def error_condition(self):
         return(
             super().error_condition()
-            or len(eval(self.inputs["Mesh Array"].default_value)) == 0
+            or len(safe_parse_object_array(self.inputs["Mesh Array"].default_value)) == 0
         )
     
     def pre_execute(self):
         super().pre_execute()
-        for obj in eval(self.inputs["Mesh Array"].default_value):
+        for obj in safe_parse_object_array(self.inputs["Mesh Array"].default_value):
             obj.select_set(True, view_layer=bpy.context.view_layer)
     
     def functionality(self):

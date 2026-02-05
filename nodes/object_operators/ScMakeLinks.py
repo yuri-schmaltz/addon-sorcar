@@ -4,6 +4,7 @@ from bpy.props import EnumProperty
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
+from ...helper import safe_parse_object_array
 
 class ScMakeLinks(Node, ScObjectOperatorNode):
     bl_idname = "ScMakeLinks"
@@ -24,7 +25,7 @@ class ScMakeLinks(Node, ScObjectOperatorNode):
     
     def pre_execute(self):
         super().pre_execute()
-        for obj in eval(self.inputs["Objects"].default_value):
+        for obj in safe_parse_object_array(self.inputs["Objects"].default_value):
             obj.select_set(True, view_layer=bpy.context.view_layer)
     
     def functionality(self):

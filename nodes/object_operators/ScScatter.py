@@ -5,7 +5,7 @@ from bpy.props import PointerProperty, StringProperty, EnumProperty, BoolPropert
 from bpy.types import Node
 from .._base.node_base import ScNode
 from .._base.node_operator import ScObjectOperatorNode
-from ...helper import focus_on_object, remove_object, print_log
+from ...helper import focus_on_object, safe_parse_object_array
 
 class ScScatter(Node, ScObjectOperatorNode):
     bl_idname = "ScScatter"
@@ -59,7 +59,7 @@ class ScScatter(Node, ScObjectOperatorNode):
             bpy.ops.object.duplicates_make_real(use_base_parent=True)
             so.parent = None
             arr_inst = o.children
-            self.prop_obj_array = repr(arr_inst)
+            self.prop_obj_array = repr(list(arr_inst))
             bpy.ops.object.select_grouped(type='CHILDREN_RECURSIVE')
             for i in arr_inst:
                 i.parent = None
@@ -91,7 +91,7 @@ class ScScatter(Node, ScObjectOperatorNode):
                     bpy.context.active_object.rotation_euler[1] = rot_diff[1]
                 if ('Z' in self.prop_rot):
                     bpy.context.active_object.rotation_euler[2] = rot_diff[2]
-                temp = eval(self.prop_obj_array)
+                temp = safe_parse_object_array(self.prop_obj_array)
                 temp.append(bpy.context.active_object)
                 self.prop_obj_array = repr(temp)
                 self.id_data.register_object(bpy.context.active_object)
@@ -106,10 +106,5 @@ class ScScatter(Node, ScObjectOperatorNode):
         return out
     
     def free(self):
-        for object in self.prop_obj_array[1:-1].split(', '):
-            try:
-                obj = eval(object)
-            except:
-                print_log(self.id_data.name, self.name, "free", "Invalid object: " + object)
-                continue
+        for obj in safe_parse_object_array(self.prop_obj_array):
             self.id_data.unregister_object(obj)

@@ -1,5 +1,15 @@
+import ast
+import re
+
 import bpy
 from mathutils import Vector
+
+ID_REFERENCE_PATTERN = re.compile(
+    r"""^bpy\.data\.(objects|curves|collections|materials|node_groups)\[(?P<quote>['"])(?P<name>.+)(?P=quote)\]$"""
+)
+ID_REFERENCE_SCAN_PATTERN = re.compile(
+    r"""bpy\.data\.(objects|curves|collections|materials|node_groups)\[(['"])(.+?)\2\]"""
+)
 
 def sc_poll_op(context):
     space = context.space_data
@@ -20,6 +30,75 @@ def sc_poll_curve_font(self, object):
 def sc_poll_lattice(self, object):
     return object.type == "LATTICE"
 
+def safe_literal_eval(data, fallback=None):
+    if isinstance(data, str):
+        try:
+            return ast.literal_eval(data)
+        except (ValueError, SyntaxError):
+            return fallback
+    if (data is None):
+        return fallback
+    return data
+
+def resolve_data_reference(data):
+    if not isinstance(data, str):
+        return None
+    match = ID_REFERENCE_PATTERN.match(data.strip())
+    if not match:
+        return None
+    collection = getattr(bpy.data, match.group(1), None)
+    if not collection:
+        return None
+    return collection.get(match.group("name"))
+
+def extract_data_references(data, collection_name=None):
+    refs = []
+    if not isinstance(data, str):
+        return refs
+    for match in ID_REFERENCE_SCAN_PATTERN.finditer(data):
+        current_collection = match.group(1)
+        if (collection_name and current_collection != collection_name):
+            continue
+        collection = getattr(bpy.data, current_collection, None)
+        if not collection:
+            continue
+        ref = collection.get(match.group(3))
+        if (ref):
+            refs.append(ref)
+    return refs
+
+def safe_parse_array(data, fallback=None):
+    parsed = safe_literal_eval(data, None)
+    if isinstance(parsed, (list, tuple, set)):
+        return list(parsed)
+    if (fallback is None):
+        return None
+    return list(fallback)
+
+def safe_parse_int_list(data):
+    out = []
+    for i in safe_parse_array(data, []):
+        try:
+            out.append(int(i))
+        except (TypeError, ValueError):
+            pass
+    return out
+
+def safe_parse_object_array(data):
+    out = extract_data_references(data, "objects")
+    if (len(out) > 0):
+        return out
+    for i in safe_parse_array(data, []):
+        if isinstance(i, bpy.types.Object):
+            out.append(i)
+        elif isinstance(i, str):
+            ref = resolve_data_reference(i)
+            if (ref is None):
+                ref = bpy.data.objects.get(i)
+            if (ref):
+                out.append(ref)
+    return out
+
 def focus_on_object(obj, edit=False):
     if (bpy.ops.object.mode_set.poll()):
         bpy.ops.object.mode_set(mode="OBJECT")
@@ -36,7 +115,7 @@ def remove_object(obj):
         try:
             data = obj.data
             type = obj.type
-        except:
+        except AttributeError:
             return
         bpy.data.objects.remove(obj, do_unlink=True, do_id_user=True)
         if hasattr(data, "users"):
@@ -101,7 +180,10 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "BOOL"):
                 val = float(data)
             elif (from_type == "STRING"):
-                val = float(eval(data))
+                parsed = safe_literal_eval(data, None)
+                if (parsed is None):
+                    return False, None
+                val = float(parsed)
             elif (from_type == "VECTOR"):
                 val = Vector(data).magnitude
             elif (from_type == "OBJECT"):
@@ -109,7 +191,7 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "CURVE"):
                 val = bpy.data.curves.find(data.name)
             elif (from_type == "ARRAY"):
-                val = len(eval(data))
+                val = len(safe_parse_array(data, []))
             elif (from_type == "SELECTION_TYPE"):
                 return False, None
         elif (to_type == "BOOL"):
@@ -126,7 +208,7 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "CURVE"):
                 val = bool(data)
             elif (from_type == "ARRAY"):
-                val = bool(eval(data))
+                val = bool(safe_parse_array(data, []))
             elif (from_type == "SELECTION_TYPE"):
                 val = len(data) != 0
         elif (to_type == "STRING"):
@@ -152,7 +234,10 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "BOOL"):
                 val = (float(data), float(data), float(data))
             elif (from_type == "STRING"):
-                val = Vector(eval(data)).to_tuple()
+                parsed = safe_literal_eval(data, None)
+                if (parsed is None):
+                    return False, None
+                val = Vector(parsed).to_tuple()
             elif (from_type == "VECTOR"):
                 val = data
             elif (from_type == "OBJECT"):
@@ -160,7 +245,10 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "CURVE"):
                 return False, None
             elif (from_type == "ARRAY"):
-                val = Vector((eval(data)[0], eval(data)[1], eval(data)[2])).to_tuple()
+                data_arr = safe_parse_array(data, [])
+                if (len(data_arr) < 3):
+                    return False, None
+                val = Vector((data_arr[0], data_arr[1], data_arr[2])).to_tuple()
             elif (from_type == "SELECTION_TYPE"):
                 val = Vector(float("VERT" in data), float("EDGE" in data), float("FACE" in data)).to_tuple()
         elif (to_type == "OBJECT"):
@@ -169,7 +257,12 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "BOOL"):
                 return False, None
             elif (from_type == "STRING"):
-                val = bpy.data.objects[eval(data).name]
+                ref = resolve_data_reference(data)
+                if (ref is None):
+                    ref = bpy.data.objects.get(str(data))
+                if (ref is None):
+                    return False, None
+                val = ref
             elif (from_type == "VECTOR"):
                 return False, None
             elif (from_type == "OBJECT"):
@@ -203,7 +296,10 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "BOOL"):
                 val = "[" + str(data) + "]"
             elif (from_type == "STRING"):
-                val = str(list(eval(data)))
+                parsed = safe_literal_eval(data, None)
+                if (parsed is None):
+                    return False, None
+                val = str(list(parsed))
             elif (from_type == "VECTOR"):
                 val = str(list(data))
             elif (from_type == "OBJECT"):
@@ -220,7 +316,13 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "BOOL"):
                 return False, None
             elif (from_type == "STRING"):
-                val = eval(data)
+                parsed = safe_literal_eval(data, None)
+                if isinstance(parsed, (set, list, tuple)):
+                    val = set(parsed)
+                elif isinstance(parsed, str):
+                    val = set([parsed]) if parsed in ["VERT", "EDGE", "FACE"] else set()
+                else:
+                    return False, None
             elif (from_type == "VECTOR"):
                 val = set()
                 if bool(data[0]):
@@ -234,7 +336,9 @@ def convert_data(data, from_type=None, to_type=None):
             elif (from_type == "CURVE"):
                 return False, None
             elif (from_type == "ARRAY"): # Allows you to take in a boolean array
-                data_eval = eval(data)
+                data_eval = safe_parse_array(data, [])
+                if (len(data_eval) < 3):
+                    return False, None
                 val = set()
                 if bool(data_eval[0]):
                     val.add("VERT")

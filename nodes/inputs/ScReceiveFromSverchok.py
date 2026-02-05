@@ -4,7 +4,7 @@ from bpy.types import Node
 from bpy.props import StringProperty
 from .._base.node_base import ScNode
 from .._base.node_input import ScInputNode
-from ...helper import focus_on_object
+from ...helper import focus_on_object, safe_parse_array
 
 class ScReceiveFromSverchok(Node, ScInputNode):
     bl_idname = "ScReceiveFromSverchok"
@@ -799,12 +799,12 @@ class ScReceiveFromSverchok(Node, ScInputNode):
     prop_faces_mask: StringProperty(default=repr([[True]*136]))
     
     def functionality(self):
-        verts = eval(self.prop_verts)
-        edges = eval(self.prop_edges)
-        faces = eval(self.prop_faces)
-        verts_mask = eval(self.prop_verts_mask)
-        edges_mask = eval(self.prop_edges_mask)
-        faces_mask = eval(self.prop_faces_mask)
+        verts = safe_parse_array(self.prop_verts, [])
+        edges = safe_parse_array(self.prop_edges, [])
+        faces = safe_parse_array(self.prop_faces, [])
+        verts_mask = safe_parse_array(self.prop_verts_mask, [])
+        edges_mask = safe_parse_array(self.prop_edges_mask, [])
+        faces_mask = safe_parse_array(self.prop_faces_mask, [])
         l = len(verts)
         objects = []
         

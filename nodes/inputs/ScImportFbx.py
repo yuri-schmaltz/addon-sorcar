@@ -16,7 +16,7 @@ class ScImportFbx(Node, ScInputNode):
     def init(self, context):
         super().init(context)
         self.inputs.new("ScNodeSocketString", "File").init("in_file", True)
-        self.inputs.new("ScNodeSocketBool", "Generate UVs").init("in_uv")
+        self.inputs.new("ScNodeSocketBool", "Use Custom Normals").init("in_uv")
     
     def error_condition(self):
         return (
@@ -27,7 +27,7 @@ class ScImportFbx(Node, ScInputNode):
     def functionality(self):
         bpy.ops.import_scene.fbx(
             filepath = bpy.path.abspath(self.inputs["File"].default_value),
-            use_custom_normals = self.inputs["Generate UVs"].default_value
+            use_custom_normals = self.inputs["Use Custom Normals"].default_value
         )
     
     def post_execute(self):
